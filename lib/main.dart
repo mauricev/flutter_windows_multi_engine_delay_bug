@@ -34,14 +34,28 @@ class MainApp extends StatefulWidget {
   State<MainApp> createState() => _MainAppState();
 }
 
-class _MainAppState extends State<MainApp> {
+class _MainAppState extends State<MainApp> with WindowListener {
   static const _channel = MethodChannel('com.example/quit');
   String? _mainWindowId;
 
   @override
   void initState() {
     super.initState();
+    windowManager.ensureInitialized();
+    windowManager.addListener(this);
     _initMethodHandler();
+  }
+
+  @override
+  void dispose() {
+    windowManager.removeListener(this);
+    super.dispose();
+  }
+
+  @override
+  void onWindowClose() async {
+    debugPrint('Main window close box clicked. Sending quit signal...');
+    await _channel.invokeMethod('quit');
   }
 
   Future<void> _initMethodHandler() async {
@@ -152,20 +166,7 @@ class _SubWindowAppState extends State<SubWindowApp> with WindowListener {
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('This is ${widget.title}.'),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  debugPrint(
-                    'Sub-window explicit close button clicked. Sending quit to main window...',
-                  );
-                  final c = WindowController.fromWindowId(widget.mainWindowId);
-                  await c.invokeMethod('quit', {});
-                },
-                child: const Text('Close Box (Quit via PostQuitMessage)'),
-              ),
-            ],
+            children: [Text('This is ${widget.title}.')],
           ),
         ),
       ),
