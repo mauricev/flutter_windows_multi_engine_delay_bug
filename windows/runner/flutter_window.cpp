@@ -3,7 +3,8 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
-
+#include <flutter/method_channel.h>
+#include <flutter/standard_method_codec.h>
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
 
@@ -35,6 +36,19 @@ bool FlutterWindow::OnCreate() {
   // registered. The following call ensures a frame is pending to ensure the
   // window is shown. It is a no-op if the first frame hasn't completed yet.
   flutter_controller_->ForceRedraw();
+  flutter::MethodChannel<> channel(
+      flutter_controller_->engine()->messenger(), "com.example/quit",
+      &flutter::StandardMethodCodec::GetInstance());
+  channel.SetMethodCallHandler(
+      [](const flutter::MethodCall<>& call,
+         std::unique_ptr<flutter::MethodResult<>> result) {
+        if (call.method_name() == "quit") {
+          PostQuitMessage(0);
+          result->Success();
+        } else {
+          result->NotImplemented();
+        }
+      });
 
   return true;
 }
